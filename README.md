@@ -8,6 +8,11 @@ This service resolves Drone secrets from 1Password Connect by vault and item nam
 - A reachable 1Password Connect deployment
 - A Connect token with read access to the relevant vaults and items
 
+## Known issues
+
+- Name is currently not used but still enforced.
+- Names/Vauls with `/` may not work.
+
 ## Environment variables
 
 | Variable | Description |
@@ -36,7 +41,7 @@ docker run -d \
   -e DRONE_SECRET=${DRONE_SECRET} \
   -e OP_CONNECT_HOST=https://connect.example.com \
   -e OP_CONNECT_TOKEN=${OP_CONNECT_TOKEN} \
-  {{DockerRepository}}
+  ghcr.io/m42e/drone-1password:main
 ```
 
 ## Requesting secrets in pipelines
