@@ -61,9 +61,22 @@ secrets:
 - name: db_password
   get:
     path: Production Vault/Database Credentials
+    name: <ignored for now but required>
 - name: api_token
   get:
     path: Production Vault/API Service/Service Keys / Token
+    name: <ignored for now but required>
+```
+
+```jsonnet
+local secret = {
+  kind: "secret",
+  name: "password",
+  get: {
+    path: "Dienste/Drone - Test - One",
+    name: "Password",
+  },
+};
 ```
 
 The first secret resolves the password automatically, while the second fetches the `Token` field within the `Service Keys` section.
