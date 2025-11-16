@@ -45,39 +45,55 @@ func New(cfg Config) (secret.Plugin, error) {
 
 func (p *plugin) Find(ctx context.Context, req *secret.Request) (*drone.Secret, error) {
 	if req == nil {
+		p.logger.Error("secret request failed: nil request")
 		return nil, errors.New("nil request")
 	}
+	entry := p.logger.WithFields(logrus.Fields{
+		"secret": req.Name,
+		"path":   req.Path,
+	})
+	entry.Info("secret request received")
 	if req.Name == "" {
-		return nil, errors.New("secret name must not be empty")
+		err := errors.New("secret name must not be empty")
+		entry.WithError(err).Error("secret request failed")
+		return nil, err
 	}
 	vaultName, itemTitle, fieldSelector, err := parseSecretPath(req.Path)
 	if err != nil {
+		entry.WithError(err).Error("secret request failed")
 		return nil, err
 	}
 
 	vault, err := p.client.findVaultByName(ctx, vaultName)
 	if err != nil {
-		return nil, fmt.Errorf("lookup vault %q: %w", vaultName, err)
+		err = fmt.Errorf("lookup vault %q: %w", vaultName, err)
+		entry.WithError(err).Error("secret request failed")
+		return nil, err
 	}
 	itemSummary, err := p.client.findItemByTitle(ctx, vault.ID, itemTitle)
 	if err != nil {
-		return nil, fmt.Errorf("lookup item %q: %w", itemTitle, err)
+		err = fmt.Errorf("lookup item %q: %w", itemTitle, err)
+		entry.WithError(err).Error("secret request failed")
+		return nil, err
 	}
 	item, err := p.client.getItem(ctx, vault.ID, itemSummary.ID)
 	if err != nil {
-		return nil, fmt.Errorf("load item %q: %w", itemTitle, err)
+		err = fmt.Errorf("load item %q: %w", itemTitle, err)
+		entry.WithError(err).Error("secret request failed")
+		return nil, err
 	}
 
 	value, err := selectFieldValue(item, fieldSelector)
 	if err != nil {
+		entry.WithError(err).Error("secret request failed")
 		return nil, err
 	}
 
-	p.logger.WithFields(logrus.Fields{
+	entry.WithFields(logrus.Fields{
 		"vault": vault.Name,
 		"item":  item.Title,
 		"field": fieldSelector,
-	}).Debug("resolved secret from 1Password")
+	}).Info("secret request succeeded")
 
 	return &drone.Secret{
 		Name:        req.Name,
